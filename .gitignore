@@ -1,48 +1,37 @@
-<CodeBlock language="gitignore" editable>
+
+# Python cache
 __pycache__/
 *.py[cod]
+*.pyo
+
+# Virtual environments
 venv/
 .venv/
 env/
 
-
+# Environment variables and secrets
 .env
 .env.*
 !.env.example
-private_key.pem
 *.pem
-
-database/.db
-database/.sqlite
-database/*.sqlite3
-
-.vscode/
-.idea/
-*.log
-.DS_Store
-Thumbs.db
+private_key.pem
 
 # Local databases
 database/*.db
 database/*.sqlite
 database/*.sqlite3
 
-# Project archives
-*.zip
-
-# Uploaded student documents
+# Uploaded assignment documents
 static/uploads/assignments/
 
-# Secrets
-.env
-.env.*
-!.env.example
-*.pem
-private_key.pem
+# Archives
+*.zip
 
-# Python environment
-venv/
-.venv/
-__pycache__/
-*.pyc
-</CodeBlock>
+# IDE files
+.vscode/
+.idea/
+
+# Logs and system files
+*.log
+.DS_Store
+Thumbs.db
