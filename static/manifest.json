@@ -1,0 +1,19 @@
+{
+    "name": "TaskPilot - Smart Assignment Manager",
+    "short_name": "TaskPilot",
+    "description": "Manage assignments and deadlines smartly.",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#f5f6fb",
+    "theme_color": "#6857e8",
+    "icons": [
+        {
+            "src": "/static/icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        }
+    ]
+}

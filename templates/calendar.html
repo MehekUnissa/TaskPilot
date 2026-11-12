@@ -1,0 +1,338 @@
+
+{% extends "base.html" %}
+
+{% block title %}Calendar | TaskPilot{% endblock %}
+
+{% block page_heading %}Assignment Calendar{% endblock %}
+
+{% block content %}
+
+<div class="welcome-section">
+    <div>
+        <p class="eyebrow">DEADLINE TRACKER</p>
+        <h1>Your assignment calendar</h1>
+        <p class="muted-text">
+            Keep track of upcoming deadlines and important dates.
+        </p>
+    </div>
+
+    <a href="{{ url_for('add_assignment') }}" class="primary-button">
+        + Add Assignment
+    </a>
+</div>
+
+
+<div class="calendar-layout">
+
+    <!-- CALENDAR -->
+    <div class="calendar-card">
+
+        <div class="calendar-header">
+
+            <button type="button" id="previousMonth" class="calendar-nav">
+                ←
+            </button>
+
+            <h2 id="calendarMonth">Month Year</h2>
+
+            <button type="button" id="nextMonth" class="calendar-nav">
+                →
+            </button>
+
+        </div>
+
+        <div class="calendar-weekdays">
+            <span>Sun</span>
+            <span>Mon</span>
+            <span>Tue</span>
+            <span>Wed</span>
+            <span>Thu</span>
+            <span>Fri</span>
+            <span>Sat</span>
+        </div>
+
+        <div class="calendar-grid" id="calendarGrid">
+            <!-- Calendar dates are generated using JavaScript -->
+        </div>
+
+        <div class="calendar-legend">
+            <span><i class="legend-dot deadline-dot"></i> Assignment deadline</span>
+            <span><i class="legend-dot today-dot"></i> Today</span>
+            <span><i class="legend-dot completed-dot"></i> Completed</span>
+        </div>
+
+    </div>
+
+
+    <!-- SELECTED DATE DETAILS -->
+    <div class="calendar-details-card">
+
+        <p class="eyebrow">DAILY SCHEDULE</p>
+        <h2 id="selectedDateHeading">Select a date</h2>
+
+        <div id="selectedDateTasks">
+            <div class="empty-state">
+                <p>Select a date on the calendar to view its assignments.</p>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ALL DEADLINES -->
+<div class="dashboard-section">
+
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">DEADLINE OVERVIEW</p>
+            <h2>All assignment deadlines</h2>
+        </div>
+
+        <span class="muted-text">{{ tasks|length }} assignment(s)</span>
+    </div>
+
+    {% if tasks %}
+
+    <div class="table-container">
+
+        <table class="data-table">
+
+            <thead>
+                <tr>
+                    <th>ASSIGNMENT</th>
+                    <th>SUBJECT</th>
+                    <th>DEADLINE</th>
+                    <th>PRIORITY</th>
+                    <th>STATUS</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for task in tasks|sort(attribute='deadline') %}
+
+                <tr>
+                    <td><strong>{{ task.title }}</strong></td>
+                    <td>{{ task.subject }}</td>
+                    <td>{{ task.deadline }} at {{ task.deadline_time or "23:59" }}</td>
+
+                    <td>
+                        <span class="priority-badge {{ task.priority|lower }}">
+                            {{ task.priority }}
+                        </span>
+                    </td>
+
+                    <td>
+                        {% if task.completed %}
+                            <span class="status-badge completed">Completed</span>
+                        {% elif task.deadline < today %}
+                            <span class="status-badge overdue">Overdue</span>
+                        {% else %}
+                            <span class="status-badge pending">Pending</span>
+                        {% endif %}
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    {% else %}
+
+    <div class="empty-state">
+        <h3>No assignments scheduled</h3>
+        <p>Add an assignment to start tracking your deadlines.</p>
+        <a href="{{ url_for('add_assignment') }}" class="primary-button">
+            + Add Assignment
+        </a>
+    </div>
+
+    {% endif %}
+
+</div>
+
+
+<!-- Assignment data for the calendar -->
+<script id="calendarTaskData" type="application/json">
+    {{ tasks|tojson }}
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const taskData = JSON.parse(
+        document.getElementById("calendarTaskData").textContent
+    );
+
+    const calendarGrid = document.getElementById("calendarGrid");
+    const monthHeading = document.getElementById("calendarMonth");
+    const selectedDateHeading = document.getElementById("selectedDateHeading");
+    const selectedDateTasks = document.getElementById("selectedDateTasks");
+
+    const today = new Date();
+    let currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    let selectedDate = null;
+
+    function formatDate(year, month, day) {
+        return [
+            year,
+            String(month + 1).padStart(2, "0"),
+            String(day).padStart(2, "0")
+        ].join("-");
+    }
+
+    function renderCalendar() {
+
+        calendarGrid.innerHTML = "";
+
+        const year = currentMonth.getFullYear();
+        const month = currentMonth.getMonth();
+
+        monthHeading.textContent = currentMonth.toLocaleDateString(
+            "en-IN",
+            { month: "long", year: "numeric" }
+        );
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        for (let i = 0; i < firstDay; i++) {
+            const blank = document.createElement("div");
+            blank.className = "calendar-day blank";
+            calendarGrid.appendChild(blank);
+        }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+
+            const dateString = formatDate(year, month, day);
+
+            const dayTasks = taskData.filter(
+                task => task.deadline === dateString
+            );
+
+            const dayElement = document.createElement("button");
+            dayElement.type = "button";
+            dayElement.className = "calendar-day";
+            dayElement.textContent = day;
+
+            if (
+                dateString === formatDate(
+                    today.getFullYear(),
+                    today.getMonth(),
+                    today.getDate()
+                )
+            ) {
+                dayElement.classList.add("today");
+            }
+
+            if (dayTasks.length > 0) {
+                dayElement.classList.add("has-deadline");
+
+                if (dayTasks.every(task => task.completed)) {
+                    dayElement.classList.add("all-completed");
+                }
+
+                const count = document.createElement("span");
+                count.className = "calendar-task-count";
+                count.textContent = dayTasks.length;
+                dayElement.appendChild(count);
+            }
+
+            if (selectedDate === dateString) {
+                dayElement.classList.add("selected");
+            }
+
+            dayElement.addEventListener("click", function () {
+                selectedDate = dateString;
+                renderCalendar();
+                showDateTasks(dateString);
+            });
+
+            calendarGrid.appendChild(dayElement);
+        }
+    }
+
+    function showDateTasks(dateString) {
+
+        const dayTasks = taskData.filter(
+            task => task.deadline === dateString
+        );
+
+        selectedDateHeading.textContent = new Date(
+            dateString + "T00:00:00"
+        ).toLocaleDateString("en-IN", {
+            day: "numeric",
+            month: "long",
+            year: "numeric"
+        });
+
+        if (dayTasks.length === 0) {
+            selectedDateTasks.innerHTML =
+                '<div class="empty-state"><p>No assignments due on this date.</p></div>';
+            return;
+        }
+
+        selectedDateTasks.innerHTML = "";
+
+        dayTasks.forEach(task => {
+
+            const card = document.createElement("div");
+            card.className = "calendar-task-item";
+
+            const title = document.createElement("h3");
+            title.textContent = task.title;
+
+            const subject = document.createElement("p");
+subject.textContent = task.subject;
+
+// Deadline time
+const deadlineTime = document.createElement("p");
+deadlineTime.textContent =
+    "Deadline: " + (task.deadline_time || "23:59");
+
+const priority = document.createElement("span");
+            priority.className = "priority-badge " + task.priority.toLowerCase();
+            priority.textContent = task.priority + " Priority";
+
+            const status = document.createElement("span");
+            status.className = "status-badge " +
+                (task.completed ? "completed" : "pending");
+            status.textContent = task.completed ? "Completed" : "Pending";
+
+            card.appendChild(title);
+            card.appendChild(subject);
+            card.appendChild(deadlineTime);
+            card.appendChild(priority);
+            card.appendChild(status);
+
+            selectedDateTasks.appendChild(card);
+        });
+    }
+
+    document.getElementById("previousMonth").addEventListener("click", function () {
+        currentMonth.setMonth(currentMonth.getMonth() - 1);
+        renderCalendar();
+    });
+
+    document.getElementById("nextMonth").addEventListener("click", function () {
+        currentMonth.setMonth(currentMonth.getMonth() + 1);
+        renderCalendar();
+    });
+
+    renderCalendar();
+    showDateTasks(formatDate(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate()
+    ));
+});
+</script>
+
+{% endblock %}
+

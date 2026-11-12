@@ -1,0 +1,164 @@
+
+{% extends "base.html" %}
+
+{% block title %}Analytics | TaskPilot{% endblock %}
+{% block page_heading %}Analytics{% endblock %}
+
+{% block content %}
+
+<div class="welcome-section">
+    <div>
+        <p class="eyebrow">PRODUCTIVITY INSIGHTS</p>
+        <h1>Understand your progress</h1>
+        <p class="muted-text">
+            Track your assignments and see how effectively you manage your workload.
+        </p>
+    </div>
+</div>
+
+<!-- OVERVIEW CARDS -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <span class="stat-label">TOTAL ASSIGNMENTS</span>
+        <h2>{{ total_count }}</h2>
+        <p class="stat-description">All recorded assignments</p>
+    </div>
+
+    <div class="stat-card">
+        <span class="stat-label">COMPLETED</span>
+        <h2>{{ completed_count }}</h2>
+        <p class="stat-description">Successfully finished</p>
+    </div>
+
+    <div class="stat-card">
+        <span class="stat-label">PENDING</span>
+        <h2>{{ pending_count }}</h2>
+        <p class="stat-description">Still to be completed</p>
+    </div>
+
+    <div class="stat-card">
+        <span class="stat-label">OVERDUE</span>
+        <h2>{{ overdue_count }}</h2>
+        <p class="stat-description">Past their deadlines</p>
+    </div>
+</div>
+
+<!-- COMPLETION PROGRESS -->
+<div class="dashboard-section">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">OVERALL PERFORMANCE</p>
+            <h2>Completion progress</h2>
+        </div>
+        <span class="analytics-percentage">{{ completion_percentage }}%</span>
+    </div>
+
+    <div class="analytics-card">
+        <div class="progress-info">
+            <span>Assignment completion rate</span>
+            <strong>{{ completion_percentage }}%</strong>
+        </div>
+
+        <div class="progress-track">
+            <progress class="analytics-progress"
+                      value="{{ completion_percentage }}"
+                      max="100"></progress>
+        </div>
+
+        <p class="muted-text">
+            You have completed {{ completed_count }} out of
+            {{ total_count }} assignments.
+        </p>
+    </div>
+</div>
+
+<!-- PRIORITY DISTRIBUTION -->
+<div class="dashboard-section">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">TASK DISTRIBUTION</p>
+            <h2>Priority analysis</h2>
+        </div>
+    </div>
+
+    <div class="analytics-grid">
+        <div class="analytics-card">
+            <h3>Assignments by priority</h3>
+
+            {% for priority, count in priority_counts.items() %}
+            <div class="analytics-bar-item">
+                <div class="analytics-bar-heading">
+                    <span class="priority-badge {{ priority|lower }}">
+                        {{ priority }}
+                    </span>
+                    <strong>{{ count }}</strong>
+                </div>
+
+                <div class="progress-track">
+                    <progress class="analytics-progress priority-fill {{ priority|lower }}"
+                              value="{{ (count / total_count * 100) if total_count else 0 }}"
+                              max="100"></progress>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- SUBJECT DISTRIBUTION -->
+        <div class="analytics-card">
+            <h3>Assignments by subject</h3>
+
+            {% if subject_counts %}
+                {% for subject, count in subject_counts.items() %}
+                <div class="analytics-bar-item">
+                    <div class="analytics-bar-heading">
+                        <span>{{ subject }}</span>
+                        <strong>{{ count }}</strong>
+                    </div>
+
+                    <div class="progress-track">
+                        <progress class="analytics-progress subject-fill"
+                                  value="{{ (count / total_count * 100) if total_count else 0 }}"
+                                  max="100"></progress>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <p>No subject data available yet.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- PRODUCTIVITY SUMMARY -->
+<div class="dashboard-section">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">YOUR PERFORMANCE</p>
+            <h2>Productivity summary</h2>
+        </div>
+    </div>
+
+    <div class="quick-access-grid">
+        <div class="quick-card">
+            <span class="quick-icon">✓</span>
+            <h3>{{ completed_count }} Completed</h3>
+            <p>Assignments successfully finished.</p>
+        </div>
+
+        <div class="quick-card">
+            <span class="quick-icon">◷</span>
+            <h3>{{ pending_count }} Pending</h3>
+            <p>Assignments that still need attention.</p>
+        </div>
+
+        <div class="quick-card">
+            <span class="quick-icon">!</span>
+            <h3>{{ overdue_count }} Overdue</h3>
+            <p>Assignments requiring attention.</p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

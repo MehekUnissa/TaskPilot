@@ -1,0 +1,1139 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}TaskPilot{% endblock %}</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="manifest"
+      href="{{ url_for('static', filename='manifest.json') }}">
+
+    <meta name="theme-color" content="#6857e8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="TaskPilot">
+    
+    
+    <script>
+        if (localStorage.getItem("taskpilot-theme") === "dark") {
+            document.documentElement.classList.add("dark-theme");
+        }
+    </script>
+
+    <style>
+        .flash-container {
+            position: fixed;
+            top: 85px;
+            right: 25px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .flash-message {
+            min-width: 300px;
+            max-width: 400px;
+            padding: 16px 18px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: white;
+            color: #222;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            animation: flashSlide 0.4s ease;
+            font-size: 14px;
+        }
+
+        .flash-message.success {
+            border-left: 5px solid #16a34a;
+        }
+
+        .flash-message.error {
+            border-left: 5px solid #dc2626;
+        }
+
+        .flash-icon {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            background: #dcfce7;
+            color: #15803d;
+            flex-shrink: 0;
+        }
+
+        .flash-message.error .flash-icon {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .flash-text {
+            flex: 1;
+        }
+
+        .flash-close {
+            border: none;
+            background: transparent;
+            font-size: 22px;
+            cursor: pointer;
+            color: #777;
+        }
+
+        @keyframes flashSlide {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* FLOATING AI BUTTON */
+        .ai-float-button {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            width: 62px;
+            height: 62px;
+            border: none;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7557f5, #4778ed);
+            color: white;
+            font-size: 25px;
+            cursor: pointer;
+            box-shadow: 0 6px 22px rgba(92, 91, 230, 0.4);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .ai-float-button:hover {
+            transform: scale(1.08);
+        }
+
+        /* CHAT WINDOW */
+        .ai-chat-window {
+            position: fixed;
+            right: 25px;
+            bottom: 100px;
+            width: 370px;
+            height: 510px;
+            max-height: calc(100vh - 130px);
+            background: var(--card-bg, #ffffff);
+            color: var(--text-color, #222222);
+            border: 1px solid var(--border-color, #e5e7eb);
+            border-radius: 18px;
+            box-shadow: 0 12px 45px rgba(0,0,0,0.2);
+            z-index: 10000;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .ai-chat-window.open {
+            display: flex;
+            animation: aiChatOpen 0.2s ease;
+        }
+
+        @keyframes aiChatOpen {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .ai-chat-header {
+            padding: 17px;
+            background: linear-gradient(135deg, #7557f5, #4778ed);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .ai-chat-header h3 {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .ai-chat-header p {
+            margin: 4px 0 0;
+            font-size: 12px;
+            opacity: 0.85;
+        }
+
+        .ai-chat-close {
+            border: none;
+            background: transparent;
+            color: white;
+            font-size: 25px;
+            cursor: pointer;
+        }
+
+        .ai-chat-messages {
+            min-height: 0;
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .ai-message {
+            max-width: 85%;
+            padding: 11px 13px;
+            border-radius: 13px;
+            font-size: 13px;
+            line-height: 1.55;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        .ai-message.bot {
+            align-self: flex-start;
+            background: var(--secondary-bg, #f1f2f8);
+        }
+
+        .ai-message.user {
+            align-self: flex-end;
+            background: #6857e8;
+            color: white;
+        }
+
+        .ai-message.error {
+            align-self: flex-start;
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .ai-chat-input-area {
+            padding: 12px;
+            border-top: 1px solid var(--border-color, #e5e7eb);
+            display: flex;
+            gap: 7px;
+            align-items: center;
+        }
+
+        .ai-chat-input {
+            flex: 1;
+            min-width: 0;
+            padding: 11px;
+            border: 1px solid var(--border-color, #ddd);
+            border-radius: 10px;
+            outline: none;
+            background: var(--secondary-bg, #fff);
+            color: var(--text-color, #222);
+            font-size: 13px;
+        }
+
+        .ai-chat-send,
+        .ai-voice-button,
+        .ai-attach-button {
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ai-chat-send {
+            background: #6857e8;
+            color: white;
+            font-size: 19px;
+        }
+
+        .ai-voice-button,
+        .ai-attach-button {
+            background: var(--secondary-bg, #eee);
+            color: var(--text-color, #333);
+            font-size: 18px;
+        }
+
+        .ai-voice-button.listening {
+            background: #dc2626;
+            color: white;
+            animation: voicePulse 1s infinite;
+        }
+
+        .ai-attach-button {
+            cursor: pointer;
+        }
+
+        .ai-file-name {
+            font-size: 11px;
+            padding: 0 12px 8px;
+            overflow-wrap: anywhere;
+            color: var(--text-color, #555);
+        }
+
+        @keyframes voicePulse {
+            50% {
+                opacity: 0.55;
+                transform: scale(1.08);
+            }
+        }
+
+        .ai-chat-send:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .ai-typing {
+            font-size: 12px;
+            opacity: 0.65;
+            padding: 0 16px 10px;
+        }
+
+        @media (max-width: 480px) {
+            .flash-container {
+                left: 12px;
+                right: 12px;
+                top: 75px;
+            }
+
+            .flash-message {
+                min-width: unset;
+                max-width: 100%;
+                width: 100%;
+            }
+
+            .ai-float-button {
+                width: 56px;
+                height: 56px;
+                right: 17px;
+                bottom: 18px;
+            }
+
+            .ai-chat-window {
+                width: auto;
+                left: 12px;
+                right: 12px;
+                bottom: 85px;
+                height: min(510px, calc(100vh - 110px));
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="app-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-icon">T</div>
+            <div>
+                <h2>TaskPilot</h2>
+                <span>Smart Assignment Manager</span>
+            </div>
+        </div>
+
+        {% if session.get("user_id") %}
+
+        
+
+        <div class="sidebar-section">
+            <p class="sidebar-label">WORKSPACE</p>
+
+            <nav class="sidebar-nav">
+
+                <a href="{{ url_for('dashboard') }}"
+                   class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                    <span class="nav-icon">⌂</span>
+                    <span>Dashboard</span>
+                </a>
+
+                <a href="{{ url_for('tasks') }}"
+                   class="nav-link {% if request.endpoint == 'tasks' %}active{% endif %}">
+                    <span class="nav-icon">▤</span>
+                    <span>My Assignments</span>
+                </a>
+
+                <a href="{{ url_for('add_assignment') }}"
+                   class="nav-link {% if request.endpoint == 'add_assignment' %}active{% endif %}">
+                    <span class="nav-icon">＋</span>
+                    <span>Add Assignment</span>
+                </a>
+
+                <a href="{{ url_for('calendar') }}"
+                   class="nav-link {% if request.endpoint == 'calendar' %}active{% endif %}">
+                    <span class="nav-icon">▦</span>
+                    <span>Calendar</span>
+                </a>
+
+                <a href="{{ url_for('focus') }}"
+   class="nav-link {% if request.endpoint == 'focus' %}active{% endif %}">
+    <span class="nav-icon">◷</span>
+    <span>Focus Timer</span>
+</a>
+
+            </nav>
+        </div>
+
+        <div class="sidebar-section">
+            <p class="sidebar-label">INSIGHTS</p>
+
+            <nav class="sidebar-nav">
+
+                <a href="{{ url_for('analytics') }}"
+                   class="nav-link {% if request.endpoint == 'analytics' %}active{% endif %}">
+                    <span class="nav-icon">▥</span>
+                    <span>Analytics</span>
+                </a>
+
+                <a href="{{ url_for('priority_engine') }}"
+                   class="nav-link {% if request.endpoint == 'priority_engine' %}active{% endif %}">
+                    <span class="nav-icon">⌘</span>
+                    <span>Priority Engine</span>
+                </a>
+
+            </nav>
+        </div>
+
+        {% else %}
+
+        <div class="sidebar-section">
+            <p class="sidebar-label">GET STARTED</p>
+
+            <nav class="sidebar-nav">
+
+                <a href="{{ url_for('login') }}"
+                   class="nav-link {% if request.endpoint == 'login' %}active{% endif %}">
+                    <span class="nav-icon">↪</span>
+                    <span>Login</span>
+                </a>
+
+                <a href="{{ url_for('register') }}"
+                   class="nav-link {% if request.endpoint == 'register' %}active{% endif %}">
+                    <span class="nav-icon">＋</span>
+                    <span>Student Registration</span>
+                </a>
+
+            </nav>
+        </div>
+
+        {% endif %}
+
+        <div class="sidebar-bottom">
+
+            {% if session.get("user_id") %}
+
+            <a href="{{ url_for('profile') }}"
+               class="nav-link {% if request.endpoint == 'profile' %}active{% endif %}">
+                <span class="nav-icon">◉</span>
+                <span>My Details</span>
+            </a>
+
+            <a href="{{ url_for('logout') }}" class="nav-link">
+                <span class="nav-icon">⇥</span>
+                <span>Logout</span>
+            </a>
+
+            {% endif %}
+
+            <button class="theme-toggle" id="themeToggle" type="button">
+                <span id="themeIcon">☾</span>
+                <span id="themeText">Dark Mode</span>
+            </button>
+
+
+        </div>
+
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+        <header class="topbar">
+
+            <div>
+                <p class="topbar-date" id="currentDate"></p>
+                <h3>{% block page_heading %}Welcome to TaskPilot{% endblock %}</h3>
+            </div>
+
+            <div class="topbar-actions">
+
+                {% if session.get("user_id") %}
+                <a href="{{ url_for('add_assignment') }}" class="primary-button">
+                    + New Assignment
+                </a>
+                {% else %}
+                <a href="{{ url_for('register') }}" class="primary-button">
+                    Get Started
+                </a>
+                {% endif %}
+
+            </div>
+
+        </header>
+
+        <!-- FLASH MESSAGE POPUPS -->
+        <div class="flash-container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">
+                        <span class="flash-icon">
+                            {% if category == "success" %}✓{% else %}!{% endif %}
+                        </span>
+
+                        <span class="flash-text">{{ message }}</span>
+
+                        <button type="button"
+                                class="flash-close"
+                                onclick="this.parentElement.remove()">
+                            &times;
+                        </button>
+                    </div>
+                {% endfor %}
+            {% endwith %}
+        </div>
+
+        <!-- PAGE CONTENT -->
+        <section class="page-content">
+            {% block content %}
+            {% endblock %}
+        </section>
+
+    </main>
+
+</div>
+
+{% if session.get("user_id") %}
+<nav class="mobile-bottom-nav">
+
+    <a href="{{ url_for('dashboard') }}"
+       class="{% if request.endpoint == 'dashboard' %}active{% endif %}">
+        <span>⌂</span>
+        <small>Home</small>
+    </a>
+
+    <a href="{{ url_for('tasks') }}"
+       class="{% if request.endpoint == 'tasks' %}active{% endif %}">
+        <span>▤</span>
+        <small>Tasks</small>
+    </a>
+
+    <a href="{{ url_for('add_assignment') }}" class="mobile-add-button">
+        <span>＋</span>
+        <small>Add</small>
+    </a>
+
+    <a href="{{ url_for('calendar') }}"
+       class="{% if request.endpoint == 'calendar' %}active{% endif %}">
+        <span>▦</span>
+        <small>Calendar</small>
+    </a>
+
+    <a href="{{ url_for('profile') }}"
+       class="{% if request.endpoint == 'profile' %}active{% endif %}">
+        <span>◉</span>
+        <small>Profile</small>
+    </a>
+
+</nav>
+{% endif %}
+
+<!-- DEADLINE ALERT DATA -->
+{% if upcoming_tasks is defined and upcoming_tasks %}
+
+<div id="deadlineAlertData" hidden>
+
+    {% for task in upcoming_tasks %}
+
+    {% if task.alert_level in ['1_hour', '1_day', '3_days', '7_days'] %}
+
+    <div
+        class="deadline-alert-item"
+        data-id="{{ task.id }}"
+        data-title="{{ task.title|e }}"
+        data-label="{{ task.alert_label|e }}"
+        data-days="{{ task.days_left }}"
+        data-hour="{{ 'true' if task.is_within_hour else 'false' }}"
+    ></div>
+
+    {% endif %}
+
+    {% endfor %}
+
+</div>
+
+{% endif %}
+
+<!-- NOTIFICATION POPUPS -->
+<div id="deadlineNotificationContainer"></div>
+
+{% if session.get("user_id") %}
+
+<button
+    type="button"
+    id="enablePushNotifications"
+    data-public-key="{{ vapid_public_key }}"
+    class="notification-permission-button">
+    Enable Push Notifications
+</button>
+
+<!-- FLOATING AI ASSISTANT -->
+<button type="button"
+        class="ai-float-button"
+        id="aiFloatButton"
+        aria-label="Open TaskPilot AI"
+        title="Ask TaskPilot AI">
+    ✦
+</button>
+
+<div class="ai-chat-window" id="aiChatWindow">
+
+    <div class="ai-chat-header">
+        <div>
+            <h3>✦ TaskPilot AI</h3>
+            <p>Your personal study assistant</p>
+        </div>
+
+        <button type="button"
+                class="ai-chat-close"
+                id="aiChatClose"
+                aria-label="Close chat">
+            &times;
+        </button>
+    </div>
+
+    <div class="ai-chat-messages" id="aiChatMessages">
+        <div class="ai-message bot">Hey! 👋 I'm TaskPilot AI.
+
+I can help you understand subjects, solve assignment questions, explain code, create notes and analyse your study documents.
+
+What would you like help with?</div>
+    </div>
+    
+<div class="ai-assignment-tools">
+    <p><strong>✨ Create assignment with AI</strong></p>
+
+    <input
+        type="text"
+        id="aiAssignmentPrompt"
+        placeholder="e.g. Add my Python assignment due Friday"
+    >
+
+    <button type="button" id="aiPrepareAssignment">
+        Prepare assignment
+    </button>
+
+    <div id="aiAssignmentPreview"></div>
+</div>
+
+
+    <div class="ai-typing" id="aiTyping" hidden>
+        TaskPilot AI is thinking...
+    </div>
+
+    <form class="ai-chat-input-area" id="aiChatForm">
+
+        <button type="button"
+                class="ai-voice-button"
+                id="aiVoiceButton"
+                title="Use voice input">
+            🎤
+        </button>
+
+        <label for="aiFileInput"
+               class="ai-attach-button"
+               title="Attach a document">
+            📎
+        </label>
+
+        <input type="file"
+               id="aiFileInput"
+               accept=".pdf,.docx,.txt,.png,.jpg,.jpeg"
+               hidden>
+
+        <input type="text"
+               class="ai-chat-input"
+               id="aiChatInput"
+               placeholder="Ask or attach a file..."
+               autocomplete="off">
+
+        <button type="submit"
+                class="ai-chat-send"
+                id="aiChatSend">
+            ➤
+        </button>
+
+    </form>
+
+    <p class="ai-file-name" id="aiFileName"></p>
+
+</div>
+
+{% endif %}
+
+<script>
+    // FLASH MESSAGE AUTO-HIDE
+    document.querySelectorAll(".flash-message").forEach(function(message) {
+        setTimeout(function() {
+            message.style.opacity = "0";
+            message.style.transform = "translateX(30px)";
+
+            setTimeout(function() {
+                message.remove();
+            }, 400);
+        }, 4000);
+    });
+
+    // AI CHAT ELEMENTS
+    const aiButton = document.getElementById("aiFloatButton");
+    const aiWindow = document.getElementById("aiChatWindow");
+    const aiClose = document.getElementById("aiChatClose");
+    const aiForm = document.getElementById("aiChatForm");
+    const aiInput = document.getElementById("aiChatInput");
+    const aiMessages = document.getElementById("aiChatMessages");
+    const aiTyping = document.getElementById("aiTyping");
+    const aiSend = document.getElementById("aiChatSend");
+    const voiceButton = document.getElementById("aiVoiceButton");
+    const aiFileInput = document.getElementById("aiFileInput");
+    const aiFileName = document.getElementById("aiFileName");
+
+    let aiHistory = [];
+
+    // OPEN AND CLOSE CHAT
+    if (aiButton && aiWindow) {
+
+        aiButton.addEventListener("click", function() {
+            aiWindow.classList.toggle("open");
+
+            if (aiWindow.classList.contains("open")) {
+                aiInput.focus();
+            }
+        });
+
+        aiClose.addEventListener("click", function() {
+            aiWindow.classList.remove("open");
+        });
+
+        // DISPLAY CHAT MESSAGE
+        function addAIMessage(message, sender) {
+            const messageElement = document.createElement("div");
+            messageElement.className = "ai-message " + sender;
+            messageElement.textContent = message;
+
+            aiMessages.appendChild(messageElement);
+            aiMessages.scrollTop = aiMessages.scrollHeight;
+        }
+
+        // SHOW SELECTED FILE NAME
+        if (aiFileInput) {
+            aiFileInput.addEventListener("change", function() {
+                const file = aiFileInput.files[0];
+
+                aiFileName.textContent = file
+                    ? "📎 " + file.name
+                    : "";
+            });
+        }
+
+        // VOICE OUTPUT
+        function speakAIResponse(message) {
+            if (!("speechSynthesis" in window)) {
+                return;
+            }
+
+            window.speechSynthesis.cancel();
+
+            const speech = new SpeechSynthesisUtterance(message);
+            speech.lang = "en-IN";
+            speech.rate = 1;
+            speech.pitch = 1;
+
+            window.speechSynthesis.speak(speech);
+        }
+
+        
+// STREAMING AI CHAT WITH OPTIONAL FILE
+aiForm.addEventListener("submit", async function(event) {
+    event.preventDefault();
+
+    const message = aiInput.value.trim();
+    const selectedFile = aiFileInput.files[0];
+
+    if ((!message && !selectedFile) || aiSend.disabled) {
+        return;
+    }
+
+    const displayMessage = message ||
+        "Please analyse this attachment: " + selectedFile.name;
+
+    addAIMessage(
+        selectedFile
+            ? displayMessage + "\n📎 " + selectedFile.name
+            : displayMessage,
+        "user"
+    );
+
+    aiInput.value = "";
+
+    aiHistory.push({
+        role: "user",
+        content: displayMessage
+    });
+
+    aiTyping.hidden = false;
+    aiSend.disabled = true;
+
+    let botElement = null;
+    let completeReply = "";
+
+    try {
+        const formData = new FormData();
+
+        formData.append("message", message);
+        formData.append(
+            "history",
+            JSON.stringify(aiHistory.slice(0, -1))
+        );
+
+        if (selectedFile) {
+            formData.append("attachment", selectedFile);
+        }
+
+        const response = await fetch(
+            "{{ url_for('ai_chat') }}",
+            {
+                method: "POST",
+                body: formData
+            }
+        );
+
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(
+                data.error || "Unable to contact the AI assistant."
+            );
+        }
+
+        if (!response.body) {
+            throw new Error("Streaming is not supported by this browser.");
+        }
+
+        // Create an empty bot message immediately
+        botElement = document.createElement("div");
+        botElement.className = "ai-message bot";
+        aiMessages.appendChild(botElement);
+
+        aiTyping.hidden = true;
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        let buffer = "";
+        let streamFinished = false;
+
+        function processEvent(eventText) {
+
+            const dataLine = eventText
+                .split("\n")
+                .find(line => line.startsWith("data:"));
+
+            if (!dataLine) {
+                return;
+            }
+
+            const data = dataLine.slice(5).trim();
+
+            if (data === "[DONE]") {
+                streamFinished = true;
+                return;
+            }
+
+            const result = JSON.parse(data);
+
+            if (result.error) {
+                throw new Error(result.error);
+            }
+
+            if (result.text) {
+                completeReply += result.text;
+
+                botElement.textContent = completeReply;
+
+                aiMessages.scrollTop = aiMessages.scrollHeight;
+            }
+        }
+
+        while (!streamFinished) {
+
+            const { value, done } = await reader.read();
+
+            if (done) {
+                buffer += decoder.decode();
+                break;
+            }
+
+            buffer += decoder.decode(value, { stream: true });
+
+            const events = buffer.split("\n\n");
+            buffer = events.pop();
+
+            for (const eventText of events) {
+                processEvent(eventText);
+            }
+        }
+
+        // Process any remaining event
+        if (buffer.trim() && !streamFinished) {
+            processEvent(buffer);
+        }
+
+        if (!completeReply.trim()) {
+            throw new Error("The AI returned an empty response.");
+        }
+
+        aiHistory.push({
+            role: "model",
+            content: completeReply
+        });
+
+        // Speak after the complete answer arrives
+        speakAIResponse(completeReply);
+
+        // Clear attachment after success
+        if (selectedFile) {
+            aiFileInput.value = "";
+            aiFileName.textContent = "";
+        }
+
+    } catch (error) {
+
+        if (botElement && !completeReply) {
+            botElement.remove();
+        }
+
+        addAIMessage(
+            error.message || "Something went wrong. Please try again.",
+            "error"
+        );
+
+        aiHistory.pop();
+
+    } finally {
+
+        aiTyping.hidden = true;
+        aiSend.disabled = false;
+        aiInput.focus();
+    }
+});
+
+
+        // VOICE INPUT
+        const SpeechRecognition =
+            window.SpeechRecognition ||
+            window.webkitSpeechRecognition;
+
+        if (voiceButton && SpeechRecognition) {
+
+            const recognition = new SpeechRecognition();
+
+            recognition.lang = "en-IN";
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            voiceButton.addEventListener("click", function() {
+
+                if (voiceButton.classList.contains("listening")) {
+                    recognition.stop();
+                    return;
+                }
+
+                try {
+                    recognition.start();
+                    voiceButton.classList.add("listening");
+                    voiceButton.textContent = "🔴";
+                } catch (error) {
+                    console.log(
+                        "Voice recognition could not start.",
+                        error
+                    );
+                }
+            });
+
+            recognition.onresult = function(event) {
+                const spokenText = event.results[0][0].transcript;
+
+                aiInput.value = spokenText;
+                aiInput.focus();
+            };
+
+            recognition.onend = function() {
+                voiceButton.classList.remove("listening");
+                voiceButton.textContent = "🎤";
+            };
+
+            recognition.onerror = function() {
+                voiceButton.classList.remove("listening");
+                voiceButton.textContent = "🎤";
+            };
+
+        } else if (voiceButton) {
+
+            voiceButton.addEventListener("click", function() {
+                addAIMessage(
+                    "Voice input is not supported in this browser. Please use Google Chrome.",
+                    "error"
+                );
+            });
+        }
+    }
+
+const prepareButton = document.getElementById("aiPrepareAssignment");
+const assignmentPrompt = document.getElementById("aiAssignmentPrompt");
+const assignmentPreview = document.getElementById("aiAssignmentPreview");
+
+let preparedAssignment = null;
+
+prepareButton?.addEventListener("click", async () => {
+    const message = assignmentPrompt.value.trim();
+
+    if (!message) {
+        alert("Describe your assignment first.");
+        return;
+    }
+
+    prepareButton.disabled = true;
+    prepareButton.textContent = "Preparing...";
+
+    try {
+        const response = await fetch("/api/ai-create-assignment", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({message})
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || data.error || "Unable to prepare assignment.");
+        }
+
+        preparedAssignment = data.draft;
+
+        assignmentPreview.innerHTML = "";
+
+        const fields = [
+            ["title", "Title"],
+            ["subject", "Subject"],
+            ["deadline", "Deadline"],
+            ["deadline_time", "Time"],
+            ["notes", "Notes"]
+        ];
+
+        fields.forEach(([key, label]) => {
+            const wrapper = document.createElement("label");
+            wrapper.textContent = label;
+
+            const input = document.createElement("input");
+            input.value = preparedAssignment[key] || "";
+            input.dataset.field = key;
+
+            wrapper.appendChild(input);
+            assignmentPreview.appendChild(wrapper);
+        });
+
+        const confirmButton = document.createElement("button");
+        confirmButton.type = "button";
+        confirmButton.textContent = "Confirm and save";
+        confirmButton.id = "aiConfirmAssignment";
+
+        assignmentPreview.appendChild(confirmButton);
+
+        confirmButton.addEventListener("click", savePreparedAssignment);
+
+    } catch (error) {
+        alert(error.message);
+    } finally {
+        prepareButton.disabled = false;
+        prepareButton.textContent = "Prepare assignment";
+    }
+});
+
+async function savePreparedAssignment() {
+    const confirmButton = document.getElementById("aiConfirmAssignment");
+
+    const fields = assignmentPreview.querySelectorAll("[data-field]");
+    const assignment = {};
+
+    fields.forEach(input => {
+        assignment[input.dataset.field] = input.value.trim();
+    });
+
+    confirmButton.disabled = true;
+    confirmButton.textContent = "Saving...";
+
+    try {
+        const response = await fetch("/api/ai-save-assignment", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(assignment)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || data.error || "Unable to save assignment.");
+        }
+
+        assignmentPreview.textContent =
+            data.message + " Priority: " + data.priority;
+
+        preparedAssignment = null;
+        assignmentPrompt.value = "";
+
+    } catch (error) {
+        alert(error.message);
+        confirmButton.disabled = false;
+        confirmButton.textContent = "Confirm and save";
+    }
+}
+
+</script>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+<script src="{{ url_for('static', filename='js/push-notifications.js') }}"></script>
+
+<script>
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function() {
+        navigator.serviceWorker.register("/service-worker.js")
+            .then(function() {
+                console.log("TaskPilot PWA is ready!");
+            })
+            .catch(function(error) {
+                console.error("PWA registration failed:", error);
+            });
+    });
+}
+</script>
+
+</body>
+</html>

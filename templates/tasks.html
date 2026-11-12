@@ -1,0 +1,222 @@
+
+{% extends "base.html" %}
+
+{% block title %}My Assignments | TaskPilot{% endblock %}
+{% block page_heading %}My Assignments{% endblock %}
+
+{% block content %}
+
+<div class="welcome-section">
+    <div>
+        <p class="eyebrow">TASK MANAGEMENT</p>
+        <h1>All your assignments</h1>
+        <p class="muted-text">
+            Organize, track, and manage your academic workload.
+        </p>
+    </div>
+
+    <a href="{{ url_for('add_assignment') }}" class="primary-button">
+        + Add Assignment
+    </a>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <span class="stat-label">TOTAL ASSIGNMENTS</span>
+        <h2>{{ tasks|length }}</h2>
+    </div>
+
+    <div class="stat-card">
+        <span class="stat-label">PENDING</span>
+        <h2>{{ tasks|selectattr('status', 'equalto', 'Pending')|list|length }}</h2>
+    </div>
+
+    <div class="stat-card">
+        <span class="stat-label">IN PROGRESS</span>
+        <h2>{{ tasks|selectattr('status', 'equalto', 'In Progress')|list|length }}</h2>
+    </div>
+
+    <div class="stat-card">
+        <span class="stat-label">COMPLETED</span>
+        <h2>{{ tasks|selectattr('status', 'equalto', 'Completed')|list|length }}</h2>
+    </div>
+</div>
+
+<div class="filter-panel">
+    <form method="GET" action="{{ url_for('tasks') }}" class="filter-form">
+
+        <div class="search-box">
+            <span>⌕</span>
+            <input
+                type="text"
+                name="search"
+                placeholder="Search by assignment or subject..."
+                value="{{ search_query }}"
+            >
+        </div>
+
+        <select name="priority" class="filter-select">
+            <option value="">All Priorities</option>
+            <option value="High" {% if selected_priority == 'High' %}selected{% endif %}>High Priority</option>
+            <option value="Medium" {% if selected_priority == 'Medium' %}selected{% endif %}>Medium Priority</option>
+            <option value="Low" {% if selected_priority == 'Low' %}selected{% endif %}>Low Priority</option>
+        </select>
+
+        <select name="status" class="filter-select">
+            <option value="all" {% if selected_status == 'all' %}selected{% endif %}>All Assignments</option>
+            <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Pending</option>
+            <option value="in_progress" {% if selected_status == 'in_progress' %}selected{% endif %}>In Progress</option>
+            <option value="completed" {% if selected_status == 'completed' %}selected{% endif %}>Completed</option>
+            <option value="overdue" {% if selected_status == 'overdue' %}selected{% endif %}>Overdue</option>
+        </select>
+
+        <button type="submit" class="primary-button">Search</button>
+        <a href="{{ url_for('tasks') }}" class="secondary-button">Reset</a>
+
+    </form>
+</div>
+
+<div class="dashboard-section">
+
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">YOUR WORKLOAD</p>
+            <h2>Assignment list</h2>
+        </div>
+
+        <span class="muted-text">{{ tasks|length }} result(s)</span>
+    </div>
+
+    {% if tasks %}
+
+    <div class="table-container">
+        <table class="data-table">
+
+            <thead>
+                <tr>
+                    <th>ASSIGNMENT</th>
+                    <th>SUBJECT</th>
+                    <th>DEADLINE</th>
+                    <th>PRIORITY</th>
+                    <th>STATUS</th>
+                    <th>ACTIONS</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for task in tasks %}
+                <tr>
+
+                    <td>
+                        <strong>{{ task.title }}</strong>
+
+                        {% if task.notes %}
+                        <p class="table-subtext">{{ task.notes }}</p>
+                        {% endif %}
+
+                        {% if task.attachment_path %}
+                        <div class="task-attachment">
+                            <span>📎</span>
+                            <a
+                                href="{{ url_for('static', filename=task.attachment_path) }}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                {{ task.attachment_name or "View attachment" }}
+                            </a>
+                        </div>
+                        {% endif %}
+                    </td>
+
+                    <td>{{ task.subject }}</td>
+
+                    <td>
+                        {{ task.deadline }}
+                        <br>
+                        <span class="muted-text">
+                            {{ task.deadline_time or "23:59" }}
+                        </span>
+                    </td>
+
+                    <td>
+                        <span class="priority-badge {{ task.priority|lower }}">
+                            {{ task.priority }}
+                        </span>
+                    </td>
+
+                    <td>
+                        {% if task.status == 'Completed' %}
+                            <span class="status-badge completed">Completed</span>
+                        {% elif task.status == 'In Progress' %}
+                            <span class="status-badge in-progress">In Progress</span>
+                        {% elif task.deadline < today %}
+                            <span class="status-badge overdue">Overdue</span>
+                        {% else %}
+                            <span class="status-badge pending">Pending</span>
+                        {% endif %}
+
+                        <form
+                            method="POST"
+                            action="{{ url_for('update_assignment_status', task_id=task.id) }}"
+                            class="status-update-form"
+                        >
+                            <select
+                                name="status"
+                                class="filter-select status-dropdown"
+                                onchange="this.form.submit()"
+                            >
+                                <option value="Pending" {% if task.status == 'Pending' %}selected{% endif %}>Pending</option>
+                                <option value="In Progress" {% if task.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                                <option value="Completed" {% if task.status == 'Completed' %}selected{% endif %}>Completed</option>
+                            </select>
+                        </form>
+                    </td>
+
+                    <td>
+                        <div class="action-buttons">
+
+                            <a
+                                href="{{ url_for('edit_assignment', task_id=task.id) }}"
+                                class="action-button edit"
+                                title="Edit assignment"
+                            >✎</a>
+
+                            <form
+                                method="POST"
+                                action="{{ url_for('delete_assignment', task_id=task.id) }}"
+                                onsubmit="return confirm('Are you sure you want to delete this assignment?');"
+                            >
+                                <button
+                                    type="submit"
+                                    class="action-button delete"
+                                    title="Delete assignment"
+                                >×</button>
+                            </form>
+
+                        </div>
+                    </td>
+
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+    </div>
+
+    {% else %}
+
+    <div class="empty-state">
+        <div class="empty-icon">▤</div>
+        <h3>No assignments found</h3>
+        <p>Try changing your search or filter, or add a new assignment.</p>
+
+        <a href="{{ url_for('add_assignment') }}" class="primary-button">
+            + Add Assignment
+        </a>
+    </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

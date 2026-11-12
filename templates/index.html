@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaskPilot | Smart Assignment Scheduler</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="/">
+        <span class="brand-mark"><span></span><span></span><span></span></span>
+        <span>Task<span class="brand-accent">Pilot</span><small>STUDENT WORKSPACE</small></span>
+      </a>
+
+      <div class="nav-label">WORKSPACE</div>
+      <button class="nav-item active" data-scroll="overview"><span>▦</span> Overview</button>
+      <button class="nav-item" data-scroll="tasks-section"><span>☷</span> My assignments</button>
+      <button class="nav-item" data-scroll="scheduler-section"><span>◈</span> Smart scheduler</button>
+      <button class="nav-item" data-scroll="heap-section"><span>⌘</span> Heap structure</button>
+
+      <div class="sidebar-bottom">
+        <div class="sidebar-tip">
+          <div class="tip-icon">✦</div>
+          <strong>Stay one step ahead.</strong>
+          <p>Let TaskPilot organize your workload so you can focus on learning.</p>
+        </div>
+        <div class="sidebar-footer">PROJECT 49 · DSA MICRO-PROJECT</div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">YOUR PERSONAL WORKSPACE</div>
+          <div class="top-title">Assignment planner</div>
+        </div>
+        <div class="top-actions">
+          <span class="today-label" id="today-label"></span>
+          <button id="theme-toggle" class="icon-button" aria-label="Toggle theme" title="Switch theme">☾</button>
+          <div class="avatar">S</div>
+        </div>
+      </header>
+
+      <section id="overview" class="welcome-row">
+        <div>
+          <div class="eyebrow">STUDENT DASHBOARD</div>
+          <h1>Make every deadline <span>count.</span></h1>
+          <p class="muted">A clearer view of your assignments, priorities and what's next.</p>
+        </div>
+        <button class="primary-button" id="add-task-top">＋ Add assignment</button>
+      </section>
+
+      <section class="stats-grid">
+        <article class="stat-card"><div class="stat-top"><span>Total assignments</span><span class="stat-icon blue">▤</span></div><div class="stat-value" id="stat-total">0</div><div class="stat-note">All your recorded tasks</div></article>
+        <article class="stat-card"><div class="stat-top"><span>Pending</span><span class="stat-icon amber">◷</span></div><div class="stat-value" id="stat-pending">0</div><div class="stat-note">Waiting to be completed</div></article>
+        <article class="stat-card"><div class="stat-top"><span>Completed</span><span class="stat-icon green">✓</span></div><div class="stat-value" id="stat-completed">0</div><div class="stat-note">Tasks you've finished</div></article>
+        <article class="stat-card"><div class="stat-top"><span>Overdue</span><span class="stat-icon red">!</span></div><div class="stat-value" id="stat-overdue">0</div><div class="stat-note">Need your attention</div></article>
+      </section>
+
+      <section id="scheduler-section" class="recommendation-card">
+        <div class="recommendation-main">
+          <div class="recommendation-kicker"><span class="live-dot"></span> SMART SCHEDULER RECOMMENDATION</div>
+          <h2 id="recommend-title">Your next task will appear here.</h2>
+          <p id="recommend-description">Add an assignment to let the priority queue find what you should work on next.</p>
+          <div class="recommend-meta" id="recommend-meta"></div>
+        </div>
+        <div class="recommendation-side">
+          <div class="target-ring">✦</div>
+          <span>YOUR NEXT MOVE</span>
+          <strong id="recommend-score">—</strong>
+          <small>priority score</small>
+          <button id="complete-recommended" class="complete-recommended" disabled>Mark as completed ✓</button>
+        </div>
+      </section>
+
+      <section class="content-grid">
+        <div class="panel tasks-panel" id="tasks-section">
+          <div class="panel-heading">
+            <div><div class="eyebrow">YOUR WORKLOAD</div><h2>My assignments</h2></div>
+            <button class="text-button" id="add-task-inline">＋ New task</button>
+          </div>
+          <div class="filter-row">
+            <button class="filter active" data-filter="All">All tasks</button>
+            <button class="filter" data-filter="Pending">Pending</button>
+            <button class="filter" data-filter="Completed">Completed</button>
+          </div>
+          <div id="task-list" class="task-list">
+            <div class="empty-state"><div>☷</div><strong>No assignments yet</strong><p>Add your first assignment to get started.</p></div>
+          </div>
+        </div>
+
+        <div class="right-column">
+          <section class="panel add-panel" id="add-panel">
+            <div class="panel-heading"><div><div class="eyebrow">QUICK ENTRY</div><h2>Add assignment</h2></div><span class="panel-symbol">＋</span></div>
+            <form id="task-form">
+              <label for="task-title">Assignment title</label>
+              <input id="task-title" name="title" placeholder="e.g. DSA Lab Record" maxlength="100" required>
+              <label for="task-subject">Subject <span class="optional">(optional)</span></label>
+              <input id="task-subject" name="subject" placeholder="e.g. Data Structures">
+              <div class="form-two">
+                <div><label for="task-deadline">Deadline</label><input id="task-deadline" name="deadline" type="date" required></div>
+                <div><label for="task-priority">Priority</label><select id="task-priority" name="priority"><option>High</option><option selected>Medium</option><option>Low</option></select></div>
+              </div>
+              <button class="primary-button submit-button" type="submit">Add to my assignments <span>→</span></button>
+              <div id="form-message" class="form-message" role="status"></div>
+            </form>
+          </section>
+
+          <section class="panel rules-panel">
+            <div class="panel-heading"><div><div class="eyebrow">HOW IT WORKS</div><h2>Priority rules</h2></div><span class="panel-symbol">◎</span></div>
+            <div class="rule-line"><span class="rule-dot red-dot"></span><div><strong>Overdue</strong><small>Urgency score +4</small></div></div>
+            <div class="rule-line"><span class="rule-dot orange-dot"></span><div><strong>Due today</strong><small>Urgency score +3</small></div></div>
+            <div class="rule-line"><span class="rule-dot yellow-dot"></span><div><strong>Due tomorrow</strong><small>Urgency score +2</small></div></div>
+            <div class="rule-line"><span class="rule-dot blue-dot"></span><div><strong>Within 3 days</strong><small>Urgency score +1</small></div></div>
+            <div class="rule-foot">Final score = Manual priority + Deadline urgency</div>
+          </section>
+        </div>
+      </section>
+
+      <section class="panel heap-panel" id="heap-section">
+        <div class="panel-heading">
+          <div><div class="eyebrow">DATA STRUCTURE IN ACTION</div><h2>Max Heap visualization</h2><p class="muted small">The root contains the task that the scheduler recommends next.</p></div>
+          <span class="heap-tag">CUSTOM MAX HEAP</span>
+        </div>
+        <div id="heap-visual" class="heap-visual"><div class="heap-empty">Add pending tasks to see the heap structure.</div></div>
+        <div class="heap-legend"><span>● Higher scheduling priority</span><span>Heap is rebuilt from pending tasks after changes.</span></div>
+      </section>
+
+      <footer>TaskPilot <span>·</span> Project 49 <span>·</span> Built with Python, Flask, SQLite &amp; a custom Max Heap</footer>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="task-modal" aria-hidden="true">
+    <div class="modal-card">
+      <button class="modal-close" id="modal-close" aria-label="Close">×</button>
+      <div class="eyebrow">TASK DETAILS</div><h2 id="modal-title">Assignment</h2>
+      <p id="modal-description"></p>
+      <div class="modal-actions"><button class="secondary-button" id="modal-delete">Delete task</button><button class="primary-button" id="modal-complete">Mark completed</button></div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile | TaskPilot{% endblock %}
+{% block page_heading %}My Profile{% endblock %}
+
+{% block content %}
+
+<div class="page-content">
+
+    <div class="welcome-section">
+        <div>
+            <span class="eyebrow">PERSONAL INFORMATION</span>
+            <h1>Your Student Profile</h1>
+            <p class="muted-text">
+                Your personal and academic information.
+            </p>
+        </div>
+    </div>
+
+    <div class="profile-layout">
+
+        <!-- STUDENT PROFILE -->
+        <div class="profile-summary-card">
+
+            <div class="profile-avatar">
+                {{ current_user.full_name[0]|upper }}
+            </div>
+
+            <h2>{{ current_user.full_name }}</h2>
+
+            <p>{{ current_user.course }}</p>
+
+            <span class="profile-tag">TaskPilot Student</span>
+
+            
+<div class="profile-summary-info">
+
+    <div>
+        <span>🪪 Student ID</span>
+        <strong>{{ current_user.student_id }}</strong>
+    </div>
+
+    <div>
+        <span>👤 Username</span>
+        <strong>{{ current_user.username }}</strong>
+    </div>
+
+    <div>
+        <span>✉️ Email Address</span>
+        <strong>{{ current_user.email }}</strong>
+    </div>
+
+    <div>
+        <span>🎓 Course / Department</span>
+        <strong>{{ current_user.course }}</strong>
+    </div>
+
+    <div>
+        <span>📅 Academic Year</span>
+        <strong>{{ current_user.year }}</strong>
+    </div>
+
+    <div>
+        <span>🏛️ Institution</span>
+        <strong>{{ current_user.institution }}</strong>
+    </div>
+
+</div>
+
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

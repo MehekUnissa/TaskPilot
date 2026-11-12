@@ -1,0 +1,384 @@
+
+{% extends "base.html" %}
+
+{% block title %}AI Study Assistant | TaskPilot{% endblock %}
+{% block page_heading %}AI Study Assistant{% endblock %}
+
+{% block content %}
+
+<style>
+.ai-wrapper {
+    max-width: 1000px;
+    margin: 20px auto;
+}
+
+.ai-header {
+    margin-bottom: 22px;
+}
+
+.ai-chat-card {
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 18px;
+    overflow: hidden;
+}
+
+.ai-messages {
+    height: 480px;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.ai-message {
+    max-width: 85%;
+    padding: 14px 17px;
+    border-radius: 15px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.ai-message.user {
+    align-self: flex-end;
+    background: var(--primary-color, #635bff);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.ai-message.assistant {
+    align-self: flex-start;
+    background: var(--secondary-bg, #f1f2f6);
+    color: var(--text-color, #222);
+    border-bottom-left-radius: 4px;
+}
+
+.ai-welcome {
+    text-align: center;
+    margin: auto;
+    max-width: 550px;
+}
+
+.ai-welcome h2 {
+    margin-bottom: 8px;
+}
+
+.ai-welcome p {
+    color: var(--muted-text, #777);
+}
+
+.ai-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 9px;
+    margin-top: 20px;
+}
+
+.ai-suggestion {
+    padding: 10px 13px;
+    border: 1px solid var(--border-color, #ddd);
+    background: transparent;
+    color: inherit;
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+.ai-input-area {
+    padding: 17px;
+    border-top: 1px solid var(--border-color, #e5e7eb);
+}
+
+.ai-input-form {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+.ai-input-form textarea {
+    flex: 1;
+    min-width: 0;
+    min-height: 48px;
+    max-height: 130px;
+    resize: vertical;
+    padding: 13px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color, #ddd);
+    background: var(--input-bg, transparent);
+    color: inherit;
+    font: inherit;
+}
+
+.ai-send-button {
+    min-height: 48px;
+    padding: 0 20px;
+    border: none;
+    border-radius: 12px;
+    background: var(--primary-color, #635bff);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.ai-send-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.ai-status {
+    min-height: 20px;
+    margin: 9px 3px 0;
+    font-size: 13px;
+    color: var(--muted-text, #777);
+}
+
+.ai-clear-button {
+    margin-top: 12px;
+    background: transparent;
+    border: none;
+    color: var(--muted-text, #777);
+    cursor: pointer;
+}
+
+@media (max-width: 600px) {
+    .ai-messages {
+        height: 55vh;
+        padding: 15px;
+    }
+
+    .ai-message {
+        max-width: 95%;
+    }
+
+    .ai-input-form {
+        flex-wrap: wrap;
+    }
+
+    .ai-input-form textarea {
+        flex-basis: 100%;
+    }
+}
+</style>
+
+<div class="ai-wrapper">
+
+    <div class="ai-header">
+        <p class="eyebrow">YOUR PERSONAL STUDY PARTNER</p>
+        <h1>TaskPilot AI</h1>
+        <p class="muted-text">
+            Ask questions, understand concepts, solve problems and learn smarter.
+        </p>
+    </div>
+
+    <div class="ai-chat-card">
+
+        <div class="ai-messages" id="ai-messages" aria-live="polite">
+
+            <div class="ai-welcome" id="ai-welcome">
+                <h2>What would you like to learn today?</h2>
+                <p>
+                    I can explain topics, help with assignments,
+                    generate notes and assist with programming.
+                </p>
+
+                <div class="ai-suggestions">
+                    <button class="ai-suggestion" type="button"
+                        data-prompt="Explain data structures with examples.">
+                        Explain data structures
+                    </button>
+
+                    <button class="ai-suggestion" type="button"
+                        data-prompt="Help me solve an assignment step by step.">
+                        Solve an assignment
+                    </button>
+
+                    <button class="ai-suggestion" type="button"
+                        data-prompt="Create concise revision notes on DBMS.">
+                        Generate study notes
+                    </button>
+
+                    <button class="ai-suggestion" type="button"
+                        data-prompt="Explain Python programming with examples.">
+                        Learn Python
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="ai-input-area">
+
+            <form class="ai-input-form" id="ai-form">
+
+                <textarea
+                    id="ai-input"
+                    placeholder="Message TaskPilot AI..."
+                    rows="1"
+                    maxlength="10000"
+                    required
+                ></textarea>
+
+                <button
+                    type="submit"
+                    class="ai-send-button"
+                    id="ai-send"
+                >
+                    Send
+                </button>
+
+            </form>
+
+            <div class="ai-status" id="ai-status"></div>
+
+            <button
+                type="button"
+                class="ai-clear-button"
+                id="ai-clear"
+            >
+                Clear conversation
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+(() => {
+    const form = document.getElementById("ai-form");
+    const input = document.getElementById("ai-input");
+    const messages = document.getElementById("ai-messages");
+    const status = document.getElementById("ai-status");
+    const sendButton = document.getElementById("ai-send");
+    const welcome = document.getElementById("ai-welcome");
+    const clearButton = document.getElementById("ai-clear");
+
+    let history = [];
+    let busy = false;
+
+    function addMessage(text, sender) {
+        if (welcome) {
+            welcome.remove();
+        }
+
+        const message = document.createElement("div");
+        message.className = "ai-message " + sender;
+        message.textContent = text;
+
+        messages.appendChild(message);
+        messages.scrollTop = messages.scrollHeight;
+
+        return message;
+    }
+
+    async function sendMessage(messageText) {
+        const message = messageText.trim();
+
+        if (!message || busy) return;
+
+        busy = true;
+        sendButton.disabled = true;
+        input.disabled = true;
+        status.textContent = "TaskPilot AI is thinking...";
+
+        addMessage(message, "user");
+
+        const previousHistory = history.slice();
+
+        history.push({
+            role: "user",
+            content: message
+        });
+
+        const loadingMessage = addMessage(
+            "Thinking...",
+            "assistant"
+        );
+
+        try {
+            const response = await fetch(
+                "{{ url_for('ai_chat') }}",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        history: previousHistory
+                    })
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || "Something went wrong.");
+            }
+
+            if (!data.reply) {
+                throw new Error("The AI returned an empty response.");
+            }
+
+            loadingMessage.textContent = data.reply;
+
+            history.push({
+                role: "model",
+                content: data.reply
+            });
+
+            status.textContent = "Ready";
+
+        } catch (error) {
+            loadingMessage.textContent = "Error: " + error.message;
+            history = previousHistory;
+            status.textContent = "Please try again.";
+        } finally {
+            busy = false;
+            sendButton.disabled = false;
+            input.disabled = false;
+            input.focus();
+            messages.scrollTop = messages.scrollHeight;
+        }
+    }
+
+    form.addEventListener("submit", event => {
+        event.preventDefault();
+
+        const message = input.value.trim();
+
+        if (!message || busy) return;
+
+        input.value = "";
+        sendMessage(message);
+    });
+
+    input.addEventListener("keydown", event => {
+        if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            form.requestSubmit();
+        }
+    });
+
+    document.querySelectorAll(".ai-suggestion").forEach(button => {
+        button.addEventListener("click", () => {
+            sendMessage(button.dataset.prompt);
+        });
+    });
+
+    clearButton.addEventListener("click", () => {
+        if (busy) return;
+
+        history = [];
+        messages.innerHTML = "";
+        messages.appendChild(welcome);
+        status.textContent = "Conversation cleared.";
+    });
+
+})();
+</script>
+
+{% endblock %}

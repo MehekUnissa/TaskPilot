@@ -1,0 +1,175 @@
+
+{% extends "base.html" %}
+
+{% block title %}Add Assignment | TaskPilot{% endblock %}
+{% block page_heading %}Add Assignment{% endblock %}
+
+{% block content %}
+
+<div class="form-page-container">
+
+    <div class="welcome-section">
+        <div>
+            <span class="eyebrow">TASK MANAGEMENT</span>
+            <h1>Create a New Assignment</h1>
+            <p class="muted-text">
+                Add your assignment details and let TaskPilot prioritize your work.
+            </p>
+        </div>
+    </div>
+
+    <div class="form-card">
+
+        <div class="form-card-heading">
+            <div class="form-heading-icon">✏️</div>
+            <div>
+                <h2>Assignment Details</h2>
+                <p>Enter the information below.</p>
+            </div>
+        </div>
+
+        <form method="POST"
+              action="{{ url_for('add_assignment') }}"
+              enctype="multipart/form-data">
+
+            <div class="form-group">
+                <label for="title">Assignment Title *</label>
+                <input type="text" id="title" name="title"
+                       placeholder="e.g. Complete Mathematics Project"
+                       required>
+            </div>
+
+            <div class="form-group">
+                <label for="subject">Subject *</label>
+                <input type="text" id="subject" name="subject"
+                       placeholder="e.g. Mathematics" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="deadline">Deadline Date *</label>
+                    <input type="date" id="deadline" name="deadline" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="deadline_time">Deadline Time *</label>
+                    <input type="time" id="deadline_time"
+                           name="deadline_time" required>
+                    <small class="muted-text">
+                        Select the exact submission time.
+                    </small>
+                </div>
+            </div>
+
+            <!-- PRIORITY MODE -->
+            <div class="form-group">
+                <label for="priority_mode">Priority Assignment Mode *</label>
+
+                <select id="priority_mode" name="priority_mode"
+                        onchange="toggleManualPriority()" required>
+                    <option value="automatic" selected>
+                        Automatic Priority
+                    </option>
+                    <option value="manual">
+                        Manual Priority
+                    </option>
+                </select>
+
+                <small class="muted-text">
+                    Choose whether TaskPilot or you will assign the priority.
+                </small>
+            </div>
+
+            <!-- MANUAL PRIORITY -->
+            <div class="form-group" id="manual-priority-group"
+                 style="display: none;">
+
+                <label for="manual_priority">Choose Priority *</label>
+
+                <select id="manual_priority" name="manual_priority">
+                    <option value="High">High</option>
+                    <option value="Medium" selected>Medium</option>
+                    <option value="Low">Low</option>
+                </select>
+
+                <small class="muted-text">
+                    Your selected priority will be used by the TaskPilot scheduler.
+                </small>
+            </div>
+
+            <!-- AUTOMATIC PRIORITY INFORMATION -->
+            <div class="priority-information" id="automatic-priority-info">
+                <h3>Automatic Priority Assignment</h3>
+                <p>
+                    TaskPilot automatically assigns priority based on
+                    the assignment deadline.
+                </p>
+
+                <div class="priority-info-list">
+                    <span class="priority-badge high">High</span>
+                    <span>Due today, overdue, or within 2 days.</span>
+
+                    <span class="priority-badge medium">Medium</span>
+                    <span>Due within 3–5 days.</span>
+
+                    <span class="priority-badge low">Low</span>
+                    <span>Due after 5 days.</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="notes">Additional Notes</label>
+                <textarea id="notes" name="notes"
+                          placeholder="Add assignment instructions or notes..."></textarea>
+            </div>
+
+            <!-- FILE ATTACHMENT -->
+            <div class="form-group">
+                <label for="attachment">Attach Reference File</label>
+                <input type="file"
+                       id="attachment"
+                       name="attachment"
+                       accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.txt">
+
+                <small class="muted-text">
+                    Supported formats: PDF, DOC, DOCX, PNG, JPG and JPEG.
+                </small>
+            </div>
+
+            <div class="form-actions">
+                <a href="{{ url_for('tasks') }}" class="secondary-button">
+                    Cancel
+                </a>
+
+                <button type="submit" class="primary-button">
+                    + Save Assignment
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleManualPriority() {
+    const mode = document.getElementById("priority_mode").value;
+
+    const manualGroup = document.getElementById("manual-priority-group");
+    const automaticInfo = document.getElementById("automatic-priority-info");
+    const manualSelect = document.getElementById("manual_priority");
+
+    if (mode === "manual") {
+        manualGroup.style.display = "block";
+        automaticInfo.style.display = "none";
+        manualSelect.required = true;
+    } else {
+        manualGroup.style.display = "none";
+        automaticInfo.style.display = "block";
+        manualSelect.required = false;
+    }
+}
+
+document.addEventListener("DOMContentLoaded", toggleManualPriority);
+</script>
+
+{% endblock %}

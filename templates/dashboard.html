@@ -1,0 +1,404 @@
+
+{% extends "base.html" %}
+
+{% block title %}Dashboard | TaskPilot{% endblock %}
+{% block page_heading %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- WELCOME -->
+<div class="welcome-section">
+    <div>
+        <p class="eyebrow">YOUR PERSONAL WORKSPACE</p>
+        <h1>Welcome back, {{ current_user.username }}!</h1>
+        <p class="muted-text">
+            Manage your assignments and let TaskPilot help you decide what to do next.
+        </p>
+    </div>
+
+    <a href="{{ url_for('add_assignment') }}" class="primary-button">
+        + Add Assignment
+    </a>
+</div>
+
+<!-- STATISTICS -->
+<div class="stats-grid">
+
+    <div class="stat-card">
+        <div class="stat-top">
+            <span class="stat-icon purple">▤</span>
+            <span class="stat-label">TOTAL ASSIGNMENTS</span>
+        </div>
+        <h2>{{ total_count }}</h2>
+        <p class="stat-description">All your assignments</p>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-top">
+            <span class="stat-icon orange">◷</span>
+            <span class="stat-label">PENDING</span>
+        </div>
+        <h2>{{ pending_count }}</h2>
+        <p class="stat-description">Waiting to be completed</p>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-top">
+            <span class="stat-icon green">✓</span>
+            <span class="stat-label">COMPLETED</span>
+        </div>
+        <h2>{{ completed_count }}</h2>
+        <p class="stat-description">Successfully finished</p>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-top">
+            <span class="stat-icon red">!</span>
+            <span class="stat-label">OVERDUE</span>
+        </div>
+        <h2>{{ overdue_count }}</h2>
+        <p class="stat-description">Past their deadlines</p>
+    </div>
+
+</div>
+
+<!-- DEADLINE REMINDERS -->
+<div class="dashboard-section deadline-section">
+
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">STAY ON TRACK</p>
+            <h2>Upcoming deadlines</h2>
+            <p class="muted-text">
+                Live countdowns for your approaching assignments.
+            </p>
+        </div>
+
+        <span class="score-badge">{{ upcoming_count }} Upcoming</span>
+    </div>
+
+    {% if upcoming_tasks %}
+
+    <div class="deadline-list">
+
+        {% for task in upcoming_tasks %}
+
+        <div class="deadline-card">
+
+            <div class="deadline-info">
+
+                <h3>{{ task.title }}</h3>
+
+                <p>
+                    {{ task.subject }} ·
+                    {{ task.deadline }} at {{ task.deadline_time or "23:59" }}
+                </p>
+
+                <p class="live-countdown"
+                   data-deadline="{{ task.deadline }}T{{ task.deadline_time or '23:59' }}">
+                    Calculating remaining time...
+                </p>
+
+            </div>
+
+            <div class="deadline-status">
+
+                {% if task.days_left == 0 %}
+                    <span class="deadline-badge due-today">
+                        Due Today
+                    </span>
+                {% elif task.days_left == 1 %}
+                    <span class="deadline-badge due-tomorrow">
+                        Due Tomorrow
+                    </span>
+                {% else %}
+                    <span class="deadline-badge due-soon">
+                        {{ task.alert_label }}
+                    </span>
+                {% endif %}
+
+                <a href="{{ url_for('edit_assignment', task_id=task.id) }}"
+                   class="text-link">
+                    View →
+                </a>
+
+            </div>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+    {% else %}
+
+    <div class="empty-state">
+        <h3>🎉 No upcoming deadlines!</h3>
+        <p>You have no pending assignments due within the next 7 days.</p>
+    </div>
+
+    {% endif %}
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    function updateDeadlineCountdowns() {
+
+        const countdowns = document.querySelectorAll(
+            ".live-countdown"
+        );
+
+        countdowns.forEach(function (element) {
+
+            const deadlineValue = element.dataset.deadline;
+            const deadline = new Date(deadlineValue);
+
+            if (isNaN(deadline.getTime())) {
+                element.textContent = "Invalid deadline";
+                return;
+            }
+
+            const now = new Date();
+            const difference = deadline.getTime() - now.getTime();
+
+            if (difference <= 0) {
+                element.textContent = "⚠ OVERDUE";
+                element.classList.add("countdown-overdue");
+                return;
+            }
+
+            const totalMinutes = Math.floor(
+                difference / (1000 * 60)
+            );
+
+            const days = Math.floor(totalMinutes / 1440);
+            const hours = Math.floor((totalMinutes % 1440) / 60);
+            const minutes = totalMinutes % 60;
+
+            let remaining = "";
+
+            if (days > 0) {
+                remaining += days + "d ";
+            }
+
+            remaining +=
+                String(hours).padStart(2, "0") + "h " +
+                String(minutes).padStart(2, "0") + "m";
+
+            element.textContent = "⏳ " + remaining + " remaining";
+
+            element.classList.remove("countdown-overdue");
+
+        });
+
+    }
+
+    updateDeadlineCountdowns();
+
+    // Refresh countdown every minute
+    setInterval(updateDeadlineCountdowns, 60000);
+
+});
+</script>
+<!-- NEXT TASK RECOMMENDATION -->
+<div class="dashboard-section">
+
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">SMART SCHEDULER</p>
+            <h2>Your next priority</h2>
+        </div>
+
+        <a href="{{ url_for('priority_engine') }}" class="text-link">
+            View Max Heap →
+        </a>
+    </div>
+
+    {% if next_task %}
+
+    <div class="recommendation-card">
+
+        <div class="recommendation-content">
+
+            <span class="recommendation-label">
+                RECOMMENDED ASSIGNMENT
+            </span>
+
+            <h2>{{ next_task.title }}</h2>
+            <p>{{ next_task.subject }}</p>
+
+            <div class="recommendation-details">
+                <span>Deadline: {{ next_task.deadline }}</span>
+
+                <span class="priority-badge {{ next_task.priority|lower }}">
+                    {{ next_task.priority }} Priority
+                </span>
+
+                <span class="score-badge">
+                    Scheduler Score: {{ next_task.score }}
+                </span>
+            </div>
+
+            {% if next_task.notes %}
+            <p class="recommendation-notes">{{ next_task.notes }}</p>
+            {% endif %}
+
+        </div>
+
+        <div class="recommendation-action">
+
+            <form method="POST"
+                  action="{{ url_for('complete_assignment', task_id=next_task.id) }}">
+
+                <button type="submit" class="success-button">
+                    ✓ Mark Complete
+                </button>
+
+            </form>
+
+            <a href="{{ url_for('edit_assignment', task_id=next_task.id) }}"
+               class="secondary-button">
+                Edit Assignment
+            </a>
+
+        </div>
+
+    </div>
+
+    {% else %}
+
+    <div class="empty-state">
+        <div class="empty-icon">✓</div>
+        <h3>You're all caught up!</h3>
+        <p>You have no pending assignments. Add a new assignment when you're ready.</p>
+
+        <a href="{{ url_for('add_assignment') }}" class="primary-button">
+            + Add Assignment
+        </a>
+    </div>
+
+    {% endif %}
+
+</div>
+
+<!-- RECENT ASSIGNMENTS -->
+<div class="dashboard-section">
+
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">YOUR TASK LIST</p>
+            <h2>Recent assignments</h2>
+        </div>
+
+        <a href="{{ url_for('tasks') }}" class="text-link">
+            View all →
+        </a>
+    </div>
+
+    {% if tasks %}
+
+    <div class="table-container">
+
+        <table class="data-table">
+
+            <thead>
+                <tr>
+                    <th>ASSIGNMENT</th>
+                    <th>SUBJECT</th>
+                    <th>DEADLINE</th>
+                    <th>PRIORITY</th>
+                    <th>STATUS</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for task in tasks[:5] %}
+
+                <tr>
+                    <td><strong>{{ task.title }}</strong></td>
+                    <td>{{ task.subject }}</td>
+                    <td>{{ task.deadline }}</td>
+
+                    <td>
+                        <span class="priority-badge {{ task.priority|lower }}">
+                            {{ task.priority }}
+                        </span>
+                    </td>
+
+                    <td>
+                        {% if task.status == "Completed" %}
+                            <span class="status-badge completed">Completed</span>
+                        {% elif task.deadline < today %}
+                            <span class="status-badge overdue">Overdue</span>
+                        {% elif task.status == "In Progress" %}
+                            <span class="status-badge in-progress">In Progress</span>
+                        {% else %}
+                            <span class="status-badge pending">Pending</span>
+                        {% endif %}
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    {% else %}
+
+    <div class="empty-state">
+        <h3>No assignments yet</h3>
+        <p>Your assignments will appear here once you add them.</p>
+
+        <a href="{{ url_for('add_assignment') }}" class="primary-button">
+            Create your first assignment
+        </a>
+    </div>
+
+    {% endif %}
+
+</div>
+
+<!-- QUICK ACCESS -->
+<div class="dashboard-section">
+
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">EXPLORE TASKPILOT</p>
+            <h2>Quick access</h2>
+        </div>
+    </div>
+
+    <div class="quick-access-grid">
+
+        <a href="{{ url_for('calendar') }}" class="quick-card">
+            <span class="quick-icon">▦</span>
+            <h3>Calendar</h3>
+            <p>View your assignment deadlines.</p>
+            <span class="quick-arrow">→</span>
+        </a>
+
+        <a href="{{ url_for('analytics') }}" class="quick-card">
+            <span class="quick-icon">▥</span>
+            <h3>Analytics</h3>
+            <p>Track your productivity.</p>
+            <span class="quick-arrow">→</span>
+        </a>
+
+        <a href="{{ url_for('priority_engine') }}" class="quick-card">
+            <span class="quick-icon">⌘</span>
+            <h3>Priority Engine</h3>
+            <p>Understand task prioritization.</p>
+            <span class="quick-arrow">→</span>
+        </a>
+
+    </div>
+
+</div>
+
+{% endblock %}

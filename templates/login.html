@@ -1,0 +1,106 @@
+```html
+{% extends "base.html" %}
+
+{% block title %}Student Login | TaskPilot{% endblock %}
+
+{% block page_heading %}Welcome Back{% endblock %}
+
+{% block content %}
+
+<div class="form-container">
+
+    <div class="form-header">
+        <h2>Student Login</h2>
+        <p>Log in to access your assignments and academic workspace.</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('login') }}">
+
+        <div class="form-group">
+            <label for="username">Username *</label>
+            <input
+                type="text"
+                id="username"
+                name="username"
+                placeholder="Enter your username"
+                value="{{ request.form.get('username', '') }}"
+                required
+                autofocus
+            >
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password *</label>
+
+            <div class="password-wrapper">
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Enter your password"
+                    required
+                >
+
+                <button
+                    type="button"
+                    class="password-toggle"
+                    onclick="togglePassword('password', this)"
+                >
+                    Show
+                </button>
+            </div>
+        </div>
+
+        <button type="submit" class="primary-button form-submit">
+            Login to TaskPilot
+        </button>
+
+    </form>
+
+    <p class="form-footer">
+        Don't have an account?
+        <a href="{{ url_for('register') }}">Register here</a>
+    </p>
+
+</div>
+
+<style>
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-wrapper input {
+    width: 100%;
+    padding-right: 65px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    border: none;
+    background: transparent;
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+</style>
+
+<script>
+function togglePassword(inputId, button) {
+    const passwordInput = document.getElementById(inputId);
+
+    if (passwordInput.type === "password") {
+        passwordInput.type = "text";
+        button.textContent = "Hide";
+    } else {
+        passwordInput.type = "password";
+        button.textContent = "Show";
+    }
+}
+</script>
+
+{% endblock %}
+```

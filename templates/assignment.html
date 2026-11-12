@@ -1,0 +1,148 @@
+
+{% extends "base.html" %}
+
+{% block title %}Add Assignment | TaskPilot{% endblock %}
+
+{% block page_heading %}Add Assignment{% endblock %}
+
+{% block content %}
+
+<div class="welcome-section">
+    <div>
+        <p class="eyebrow">TASK MANAGEMENT</p>
+        <h1>Create a new assignment</h1>
+        <p class="muted-text">
+            Add your academic task and let TaskPilot help you prioritize it.
+        </p>
+    </div>
+
+    <a href="{{ url_for('tasks') }}" class="secondary-button">
+        ← Back to Assignments
+    </a>
+</div>
+
+
+<div class="form-page-container">
+
+    <div class="form-card">
+
+        <div class="form-card-heading">
+            <div class="form-heading-icon">＋</div>
+            <div>
+                <h2>Assignment Details</h2>
+                <p>Enter the details of your new assignment below.</p>
+            </div>
+        </div>
+
+
+        <form method="POST" action="{{ url_for('add_assignment') }}">
+
+            <div class="form-group">
+                <label for="title">Assignment Title *</label>
+
+                <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    placeholder="e.g. Data Structures Project"
+                    required
+                    maxlength="150"
+                >
+            </div>
+
+
+            <div class="form-group">
+                <label for="subject">Subject *</label>
+
+                <input
+                    type="text"
+                    id="subject"
+                    name="subject"
+                    placeholder="e.g. Computer Science"
+                    required
+                    maxlength="100"
+                >
+            </div>
+
+
+            <div class="form-row">
+
+                <div class="form-group">
+                    <label for="deadline">Deadline *</label>
+
+                    <input
+                        type="date"
+                        id="deadline"
+                        name="deadline"
+                        required
+                    >
+                </div>
+
+
+                <div class="form-group">
+                    <label for="priority">Priority Level *</label>
+
+                    <select id="priority" name="priority" required>
+                        <option value="High">High Priority</option>
+                        <option value="Medium" selected>Medium Priority</option>
+                        <option value="Low">Low Priority</option>
+                    </select>
+                </div>
+
+            </div>
+
+
+            <div class="form-group">
+                <label for="notes">Additional Notes</label>
+
+                <textarea
+                    id="notes"
+                    name="notes"
+                    rows="5"
+                    placeholder="Add instructions, reminders, or other details..."
+                ></textarea>
+            </div>
+
+
+            <div class="priority-information">
+
+                <h3>How priority works</h3>
+
+                <p>
+                    TaskPilot combines your selected priority with deadline
+                    urgency to calculate a scheduling score.
+                </p>
+
+                <div class="priority-info-list">
+                    <span class="priority-badge high">High</span>
+                    <span>Important assignments</span>
+
+                    <span class="priority-badge medium">Medium</span>
+                    <span>Regular assignments</span>
+
+                    <span class="priority-badge low">Low</span>
+                    <span>Less urgent assignments</span>
+                </div>
+
+            </div>
+
+
+            <div class="form-actions">
+
+                <a href="{{ url_for('tasks') }}" class="secondary-button">
+                    Cancel
+                </a>
+
+                <button type="submit" class="primary-button">
+                    + Save Assignment
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

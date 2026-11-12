@@ -1,0 +1,376 @@
+```html
+{% extends "base.html" %}
+
+{% block title %}Student Registration | TaskPilot{% endblock %}
+
+{% block page_heading %}Create Your Student Account{% endblock %}
+
+{% block content %}
+
+<div class="form-container">
+
+    <div class="form-header">
+        <h2>Join TaskPilot</h2>
+        <p>Register your student details to manage assignments and deadlines.</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('register') }}">
+
+        <!-- FULL NAME -->
+        <div class="form-group">
+            <label for="full_name">Full Name *</label>
+            <input type="text" id="full_name" name="full_name"
+                   placeholder="Enter your full name"
+                   value="{{ request.form.get('full_name', '') }}" required>
+        </div>
+
+        <!-- STUDENT ID -->
+        <div class="form-group">
+            <label for="student_id">Student ID *</label>
+            <input type="text" id="student_id" name="student_id"
+                   placeholder="Enter your student ID"
+                   value="{{ request.form.get('student_id', '') }}" required>
+        </div>
+
+        <!-- EMAIL -->
+        <div class="form-group">
+            <label for="email">Email Address *</label>
+            <input type="email" id="email" name="email"
+                   placeholder="Enter your email"
+                   value="{{ request.form.get('email', '') }}" required>
+        </div>
+
+        <!-- USERNAME -->
+        <div class="form-group">
+            <label for="username">Username *</label>
+            <input type="text" id="username" name="username"
+                   placeholder="Choose a username"
+                   value="{{ request.form.get('username', '') }}"
+                   minlength="3" required>
+        </div>
+
+        <!-- PASSWORD -->
+        <div class="form-group">
+
+            <label for="password">Password *</label>
+
+            <div class="password-wrapper">
+                <input type="password" id="password" name="password"
+                       placeholder="Create a strong password"
+                       minlength="8" required>
+
+                <button type="button" class="password-toggle"
+                        onclick="togglePassword('password', this)">
+                    Show
+                </button>
+            </div>
+
+            <!-- PASSWORD STRENGTH -->
+            <div class="password-strength">
+
+                <div class="strength-track">
+                    <div id="strength-bar"></div>
+                </div>
+
+                <p id="strength-text">
+                    Password strength: Not entered
+                </p>
+
+                <ul class="password-rules">
+                    <li id="rule-length">At least 8 characters</li>
+                    <li id="rule-upper">One uppercase letter</li>
+                    <li id="rule-lower">One lowercase letter</li>
+                    <li id="rule-number">One number</li>
+                    <li id="rule-special">One special character</li>
+                </ul>
+
+            </div>
+        </div>
+
+        <!-- CONFIRM PASSWORD -->
+        <!-- CONFIRM PASSWORD -->
+<div class="form-group">
+
+    <label for="confirm_password">Confirm Password *</label>
+
+    <div class="password-wrapper">
+        <input type="password"
+               id="confirm_password"
+               name="confirm_password"
+               placeholder="Re-enter your password"
+               minlength="8"
+               required>
+
+        <button type="button"
+                class="password-toggle"
+                onclick="togglePassword('confirm_password', this)">
+            Show
+        </button>
+    </div>
+
+    <p id="password-match-text" class="password-match-text">
+        Please confirm your password.
+    </p>
+
+</div>
+
+        <!-- COURSE -->
+        <div class="form-group">
+            <label for="course">Course / Department *</label>
+            <input type="text" id="course" name="course"
+                   placeholder="Example: B.Tech Computer Science"
+                   value="{{ request.form.get('course', '') }}" required>
+        </div>
+
+        <!-- ACADEMIC YEAR -->
+        <div class="form-group">
+            <label for="year">Academic Year *</label>
+
+            <select id="year" name="year" required>
+                <option value="">Select your year</option>
+
+                {% for year_option in ["1st Year", "2nd Year", "3rd Year", "4th Year", "Other"] %}
+                    <option value="{{ year_option }}"
+                        {% if request.form.get('year') == year_option %}selected{% endif %}>
+                        {{ year_option }}
+                    </option>
+                {% endfor %}
+
+            </select>
+        </div>
+
+        <!-- INSTITUTION -->
+        <div class="form-group">
+            <label for="institution">Institution Name *</label>
+            <input type="text" id="institution" name="institution"
+                   placeholder="Enter your college or university"
+                   value="{{ request.form.get('institution', '') }}" required>
+        </div>
+
+        <!-- SUBMIT -->
+        <button type="submit" class="primary-button form-submit">
+            Create Student Account
+        </button>
+
+    </form>
+
+    <p class="form-footer">
+        Already registered?
+        <a href="{{ url_for('login') }}">Login here</a>
+    </p>
+
+</div>
+
+
+<style>
+.password-match-text {
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.password-match-text.match {
+    color: #16a34a;
+}
+
+.password-match-text.mismatch {
+    color: #dc2626;
+}
+/* PASSWORD FIELD */
+
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-wrapper input {
+    width: 100%;
+    padding-right: 65px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    border: none;
+    background: transparent;
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+
+/* PASSWORD STRENGTH */
+
+.password-strength {
+    margin-top: 12px;
+    font-size: 12px;
+}
+
+.strength-track {
+    width: 100%;
+    height: 7px;
+    background: var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+#strength-bar {
+    height: 100%;
+    width: 0%;
+    background: #dc2626;
+    transition: width 0.3s ease, background 0.3s ease;
+}
+
+#strength-text {
+    margin-top: 7px;
+    font-weight: 700;
+}
+
+.password-rules {
+    list-style: none;
+    padding: 0;
+    margin-top: 10px;
+}
+
+.password-rules li {
+    margin: 5px 0;
+    color: #dc2626;
+}
+
+.password-rules li.valid {
+    color: #16a34a;
+}
+
+.password-rules li.valid::before {
+    content: "✓ ";
+}
+
+</style>
+
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    // SHOW / HIDE PASSWORD
+
+    window.togglePassword = function(inputId, button) {
+
+        const passwordInput = document.getElementById(inputId);
+
+        if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            button.textContent = "Hide";
+        } else {
+            passwordInput.type = "password";
+            button.textContent = "Show";
+        }
+
+    };
+
+
+    // PASSWORD STRENGTH CHECKER
+
+    const passwordField = document.getElementById("password");
+
+    const strengthBar = document.getElementById("strength-bar");
+    const strengthText = document.getElementById("strength-text");
+
+    function updatePasswordStrength() {
+
+        const password = passwordField.value;
+
+        const rules = {
+            length: password.length >= 8,
+            upper: /[A-Z]/.test(password),
+            lower: /[a-z]/.test(password),
+            number: /[0-9]/.test(password),
+            special: /[^A-Za-z0-9]/.test(password)
+        };
+
+        let score = 0;
+
+        Object.keys(rules).forEach(function(rule) {
+
+            const element = document.getElementById("rule-" + rule);
+
+            if (rules[rule]) {
+                element.classList.add("valid");
+                score++;
+            } else {
+                element.classList.remove("valid");
+            }
+
+        });
+
+        strengthBar.style.width = (score * 20) + "%";
+
+        if (password.length === 0) {
+
+            strengthText.textContent = "Password strength: Not entered";
+            strengthBar.style.background = "#dc2626";
+
+        } else if (score <= 2) {
+
+            strengthText.textContent = "Password strength: Weak";
+            strengthBar.style.background = "#dc2626";
+
+        } else if (score <= 4) {
+
+            strengthText.textContent = "Password strength: Medium";
+            strengthBar.style.background = "#f59e0b";
+
+        } else {
+
+            strengthText.textContent = "Password strength: Strong";
+            strengthBar.style.background = "#16a34a";
+
+        }
+
+    }
+
+passwordField.addEventListener("input", updatePasswordStrength);
+
+// INITIAL CHECK
+updatePasswordStrength();
+
+
+// CONFIRM PASSWORD MATCH CHECKER
+
+const confirmPasswordField =
+    document.getElementById("confirm_password");
+
+const matchText =
+    document.getElementById("password-match-text");
+
+function checkPasswordMatch() {
+
+    const password = passwordField.value;
+    const confirmPassword = confirmPasswordField.value;
+
+    matchText.classList.remove("match", "mismatch");
+
+    if (confirmPassword.length === 0) {
+        matchText.textContent = "Please confirm your password.";
+    }
+    else if (password === confirmPassword) {
+        matchText.textContent = "✓ Passwords match!";
+        matchText.classList.add("match");
+    }
+    else {
+        matchText.textContent = "✗ Passwords do not match.";
+        matchText.classList.add("mismatch");
+    }
+}
+
+passwordField.addEventListener("input", checkPasswordMatch);
+
+confirmPasswordField.addEventListener("input", checkPasswordMatch);
+
+});
+</script>
+
+{% endblock %}
+```

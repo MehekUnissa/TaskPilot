@@ -1,0 +1,385 @@
+
+{% extends "base.html" %}
+
+{% block title %}Focus Timer | TaskPilot{% endblock %}
+{% block page_heading %}Focus Timer{% endblock %}
+
+{% block content %}
+
+<style>
+.focus-wrapper {
+    max-width: 760px;
+    margin: 25px auto;
+}
+
+.focus-card {
+    text-align: center;
+    padding: 35px 20px;
+    border-radius: 20px;
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border-color, #e5e7eb);
+}
+
+.focus-eyebrow {
+    color: var(--muted-text, #777);
+    letter-spacing: 2px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.focus-modes {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 25px 0;
+}
+
+.focus-mode {
+    padding: 10px 16px;
+    border: 1px solid var(--border-color, #ddd);
+    border-radius: 10px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+
+.focus-mode.active {
+    background: var(--primary-color, #635bff);
+    color: white;
+    border-color: transparent;
+}
+
+.timer-display {
+    font-size: clamp(65px, 15vw, 105px);
+    font-weight: 800;
+    letter-spacing: 3px;
+    margin: 20px 0;
+    font-variant-numeric: tabular-nums;
+}
+
+.timer-message {
+    color: var(--muted-text, #777);
+    margin-bottom: 25px;
+}
+
+.timer-controls {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.timer-controls button {
+    padding: 12px 25px;
+    border-radius: 10px;
+    cursor: pointer;
+    border: none;
+    font-weight: 600;
+}
+
+.timer-start {
+    background: var(--primary-color, #635bff);
+    color: white;
+}
+
+.timer-secondary {
+    background: var(--secondary-bg, #eeeeee);
+    color: inherit;
+}
+
+.focus-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.focus-stat {
+    padding: 20px 10px;
+    text-align: center;
+    border-radius: 14px;
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border-color, #e5e7eb);
+}
+
+.focus-stat h2 {
+    margin: 8px 0 0;
+}
+
+.focus-stat p {
+    margin: 0;
+    color: var(--muted-text, #777);
+    font-size: 12px;
+}
+
+@media (max-width: 500px) {
+    .focus-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .focus-card {
+        padding: 25px 12px;
+    }
+}
+</style>
+
+<div class="focus-wrapper">
+
+    <div class="welcome-section">
+        <div>
+            <p class="eyebrow">STUDY SMARTER</p>
+            <h1>Focus Mode</h1>
+            <p class="muted-text">
+                Stay focused, take breaks, and make progress.
+            </p>
+        </div>
+    </div>
+
+    <div class="focus-card">
+
+        <p class="focus-eyebrow" id="mode-label">FOCUS SESSION</p>
+
+        <div class="focus-modes">
+            <button class="focus-mode active" data-mode="focus">Focus</button>
+            <button class="focus-mode" data-mode="short">Short Break</button>
+            <button class="focus-mode" data-mode="long">Long Break</button>
+        </div>
+
+        <div class="timer-display" id="timer">25:00</div>
+
+        <p class="timer-message" id="timer-message">
+            Time to concentrate on your work.
+        </p>
+
+        <div class="timer-controls">
+            <button class="timer-start" id="start-btn">Start Focus</button>
+            <button class="timer-secondary" id="reset-btn">Reset</button>
+            <button class="timer-secondary" id="skip-btn">Skip</button>
+        </div>
+
+    </div>
+
+    <div class="focus-stats">
+
+        <div class="focus-stat">
+            <p>Completed Sessions</p>
+            <h2 id="session-count">0</h2>
+        </div>
+
+        <div class="focus-stat">
+            <p>Today's Focus Time</p>
+            <h2 id="focus-minutes">0 min</h2>
+        </div>
+
+        <div class="focus-stat">
+            <p>Current Cycle</p>
+            <h2 id="cycle-count">0 / 4</h2>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+(() => {
+    const durations = {
+        focus: 25 * 60,
+        short: 5 * 60,
+        long: 15 * 60
+    };
+
+    const labels = {
+        focus: "FOCUS SESSION",
+        short: "SHORT BREAK",
+        long: "LONG BREAK"
+    };
+
+    const messages = {
+        focus: "Time to concentrate on your work.",
+        short: "Relax a little. You earned this break!",
+        long: "Great work! Take a longer break."
+    };
+
+    let mode = "focus";
+    let remaining = durations.focus;
+    let running = false;
+    let interval = null;
+    let endTime = null;
+    let completedSessions = 0;
+
+    const timer = document.getElementById("timer");
+    const startButton = document.getElementById("start-btn");
+    const resetButton = document.getElementById("reset-btn");
+    const skipButton = document.getElementById("skip-btn");
+    const modeLabel = document.getElementById("mode-label");
+    const message = document.getElementById("timer-message");
+
+    const storageKey = "taskpilot-focus-history";
+
+    function getHistory() {
+        try {
+            return JSON.parse(localStorage.getItem(storageKey)) || [];
+        } catch {
+            return [];
+        }
+    }
+
+    function saveFocusSession() {
+        const history = getHistory();
+        history.push({
+            date: new Date().toISOString().slice(0, 10),
+            minutes: 25
+        });
+        localStorage.setItem(storageKey, JSON.stringify(history));
+    }
+
+    function updateStats() {
+        const history = getHistory();
+        const today = new Date().toISOString().slice(0, 10);
+
+        const todaySessions = history.filter(item => item.date === today);
+        const todayMinutes = todaySessions.reduce(
+            (total, item) => total + item.minutes, 0
+        );
+
+        document.getElementById("session-count").textContent =
+            todaySessions.length;
+
+        document.getElementById("focus-minutes").textContent =
+            todayMinutes + " min";
+
+        document.getElementById("cycle-count").textContent =
+            (todaySessions.length % 4) + " / 4";
+    }
+
+    function displayTimer() {
+        const minutes = Math.floor(remaining / 60);
+        const seconds = remaining % 60;
+
+        timer.textContent =
+            String(minutes).padStart(2, "0") + ":" +
+            String(seconds).padStart(2, "0");
+
+        document.title = timer.textContent + " | TaskPilot Focus";
+    }
+
+    function stopTimer() {
+        clearInterval(interval);
+        interval = null;
+        running = false;
+        endTime = null;
+        startButton.textContent = "Start " +
+            (mode === "focus" ? "Focus" : "Break");
+    }
+
+    function setMode(nextMode) {
+        stopTimer();
+
+        mode = nextMode;
+        remaining = durations[mode];
+
+        modeLabel.textContent = labels[mode];
+        message.textContent = messages[mode];
+
+        document.querySelectorAll(".focus-mode").forEach(button => {
+            button.classList.toggle(
+                "active",
+                button.dataset.mode === mode
+            );
+        });
+
+        displayTimer();
+    }
+
+    function completeSession() {
+        stopTimer();
+        remaining = 0;
+        displayTimer();
+
+        if (mode === "focus") {
+            saveFocusSession();
+            updateStats();
+
+            const history = getHistory();
+            const today = new Date().toISOString().slice(0, 10);
+            const todayCount = history.filter(
+                item => item.date === today
+            ).length;
+
+            message.textContent = "Focus session completed! Well done.";
+
+            setMode(todayCount % 4 === 0 ? "long" : "short");
+            message.textContent =
+                todayCount % 4 === 0
+                    ? "Four focus sessions completed! Take a long break."
+                    : "Focus session completed! Take a short break.";
+
+        } else {
+            setMode("focus");
+            message.textContent = "Break finished. Ready to focus again?";
+        }
+
+        displayTimer();
+    }
+
+    function tick() {
+        remaining = Math.max(
+            0,
+            Math.ceil((endTime - Date.now()) / 1000)
+        );
+
+        displayTimer();
+
+        if (remaining <= 0) {
+            completeSession();
+        }
+    }
+
+    startButton.addEventListener("click", () => {
+        if (running) {
+            remaining = Math.max(
+                0,
+                Math.ceil((endTime - Date.now()) / 1000)
+            );
+            stopTimer();
+            displayTimer();
+            return;
+        }
+
+        if (remaining <= 0) {
+            remaining = durations[mode];
+        }
+
+        running = true;
+        endTime = Date.now() + remaining * 1000;
+        startButton.textContent = "Pause";
+
+        interval = setInterval(tick, 250);
+        tick();
+    });
+
+    resetButton.addEventListener("click", () => {
+        setMode(mode);
+    });
+
+    skipButton.addEventListener("click", () => {
+        if (mode === "focus") {
+            setMode("short");
+        } else {
+            setMode("focus");
+        }
+    });
+
+    document.querySelectorAll(".focus-mode").forEach(button => {
+        button.addEventListener("click", () => {
+            setMode(button.dataset.mode);
+        });
+    });
+
+    updateStats();
+    displayTimer();
+})();
+</script>
+
+{% endblock %}

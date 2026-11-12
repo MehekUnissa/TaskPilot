@@ -1,0 +1,111 @@
+
+{% extends "base.html" %}
+
+{% block title %}Priority Engine | TaskPilot{% endblock %}
+
+{% block page_heading %}Priority Engine{% endblock %}
+
+{% block content %}
+
+<div class="page-content">
+
+    <!-- PAGE HEADER -->
+    <div class="welcome-section">
+        <div>
+            <span class="eyebrow">SCHEDULER RECOMMENDATION</span>
+            <h1>Next assignment to complete</h1>
+            <p class="muted-text">
+                TaskPilot recommends your next assignment based on priority and deadline urgency.
+            </p>
+        </div>
+
+        
+    </div>
+
+    <!-- RECOMMENDATION CARD -->
+    {% if next_task %}
+
+    <div class="recommendation-card">
+
+        <div class="recommendation-content">
+
+            <span class="recommendation-label">
+                HIGHEST PRIORITY ASSIGNMENT
+            </span>
+
+            <h2>{{ next_task.title }}</h2>
+
+            <p>{{ next_task.subject }}</p>
+
+            <div class="recommendation-details">
+
+                <span>
+                    📅 Deadline: {{ next_task.deadline }}
+                </span>
+
+                <span class="priority-badge {{ next_task.priority|lower }}">
+                    {{ next_task.priority }} Priority
+                </span>
+
+                <span class="score-badge">
+                    Score: {{ next_task.score }}
+                </span>
+
+            </div>
+
+            {% if next_task.notes %}
+            <p class="recommendation-notes">
+                {{ next_task.notes }}
+            </p>
+            {% endif %}
+
+        </div>
+
+        <div class="recommendation-action">
+
+            <form
+                method="POST"
+                action="{{ url_for('complete_assignment', task_id=next_task.id) }}"
+            >
+                <button type="submit" class="success-button">
+                    ✓ Mark Complete
+                </button>
+            </form>
+
+            <a
+                href="{{ url_for('edit_assignment', task_id=next_task.id) }}"
+                class="secondary-button"
+            >
+                Edit Assignment
+            </a>
+
+        </div>
+
+    </div>
+
+    {% else %}
+
+    <div class="empty-state">
+        <h3>No pending assignments</h3>
+
+        <p>
+            Add assignments to see how the Max Heap schedules them.
+        </p>
+
+        <a href="{{ url_for('add_assignment') }}" class="primary-button">
+            + Add Assignment
+        </a>
+    </div>
+
+    {% endif %}
+
+    <!-- BACK TO ASSIGNMENTS -->
+    <div style="margin-top: 22px;">
+        <a href="{{ url_for('tasks') }}" class="text-link">
+            ← Back to Assignments
+        </a>
+    </div>
+
+</div>
+
+{% endblock %}
